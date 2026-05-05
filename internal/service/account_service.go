@@ -15,6 +15,32 @@ func NewAccountService(repo repository.AccountRepository) *AccountService {
 	return &AccountService{repo: repo}
 }
 
+func (s *AccountService) Transfer(from, to string, amount float64) error {
+	if amount <= 0 {
+		return fmt.Errorf("valor deve ser maior que zero")
+	}
+	fromAccount, err := s.repo.FindByNumber(from)
+	if err != nil {
+		return err
+	}
+	if fromAccount == nil {
+		return fmt.Errorf("conta origem %s não encontrada", from)
+	}
+	toAccount, err := s.repo.FindByNumber(to)
+	if err != nil {
+		return err
+	}
+	if toAccount == nil {
+		return fmt.Errorf("conta destino %s não encontrada", to)
+	}
+	fromAccount.Balance -= amount
+	toAccount.Balance += amount
+	if err := s.repo.Update(*fromAccount); err != nil {
+		return err
+	}
+	return s.repo.Update(*toAccount)
+}
+
 func (s *AccountService) Debit(number string, amount float64) error {
 	if amount <= 0 {
 		return fmt.Errorf("valor deve ser maior que zero")
