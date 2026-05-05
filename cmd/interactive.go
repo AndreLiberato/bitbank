@@ -10,7 +10,10 @@ import (
 	"github.com/charmbracelet/huh"
 )
 
-const opSair = "sair"
+const (
+	opCadastrar = "cadastrar"
+	opSair      = "sair"
+)
 
 func RunInteractive(svc *service.AccountService) {
 	for {
@@ -31,6 +34,7 @@ func selecionarOperacao() string {
 			huh.NewSelect[string]().
 				Title("BitBank — escolha uma operação").
 				Options(
+					huh.NewOption("Cadastrar Conta", opCadastrar),
 					huh.NewOption("Sair", opSair),
 				).
 				Value(&op),
@@ -43,6 +47,31 @@ func selecionarOperacao() string {
 }
 
 func executarOperacao(op string, svc *service.AccountService) {
+	switch op {
+	case opCadastrar:
+		cadastrarConta(svc)
+	}
+}
+
+func cadastrarConta(svc *service.AccountService) {
+	var numero string
+	form := huh.NewForm(
+		huh.NewGroup(
+			huh.NewInput().
+				Title("Cadastrar Conta").
+				Description("Informe o número da nova conta").
+				Value(&numero).
+				Validate(naoVazio),
+		),
+	)
+	if err := form.Run(); err != nil {
+		return
+	}
+	if err := svc.CreateAccount(numero); err != nil {
+		printErro(err)
+		return
+	}
+	printSucesso(fmt.Sprintf("Conta %s criada com saldo R$ 0,00.", numero))
 }
 
 func aguardarEnter() {
