@@ -14,8 +14,9 @@ const (
 	opCadastrar = "cadastrar"
 	opSaldo     = "saldo"
 	opCredito   = "credito"
-	opDebito    = "debito"
-	opSair      = "sair"
+	opDebito        = "debito"
+	opTransferencia = "transferencia"
+	opSair          = "sair"
 )
 
 func RunInteractive(svc *service.AccountService) {
@@ -41,6 +42,7 @@ func selecionarOperacao() string {
 					huh.NewOption("Consultar Saldo", opSaldo),
 					huh.NewOption("Crédito", opCredito),
 					huh.NewOption("Débito", opDebito),
+					huh.NewOption("Transferência", opTransferencia),
 					huh.NewOption("Sair", opSair),
 				).
 				Value(&op),
@@ -62,6 +64,8 @@ func executarOperacao(op string, svc *service.AccountService) {
 		credito(svc)
 	case opDebito:
 		debito(svc)
+	case opTransferencia:
+		transferencia(svc)
 	}
 }
 
@@ -156,6 +160,36 @@ func debito(svc *service.AccountService) {
 		return
 	}
 	printSucesso(fmt.Sprintf("Débito de R$ %.2f realizado na conta %s.", parseValor(valorStr), numero))
+}
+
+func transferencia(svc *service.AccountService) {
+	var origem, destino, valorStr string
+	form := huh.NewForm(
+		huh.NewGroup(
+			huh.NewInput().
+				Title("Transferência").
+				Description("Conta origem").
+				Value(&origem).
+				Validate(naoVazio),
+			huh.NewInput().
+				Description("Conta destino").
+				Value(&destino).
+				Validate(naoVazio),
+			huh.NewInput().
+				Description("Valor").
+				Value(&valorStr).
+				Validate(validarValor),
+		),
+	)
+	if err := form.Run(); err != nil {
+		return
+	}
+	valor := parseValor(valorStr)
+	if err := svc.Transfer(origem, destino, valor); err != nil {
+		printErro(err)
+		return
+	}
+	printSucesso(fmt.Sprintf("Transferência de R$ %.2f da conta %s para %s realizada.", valor, origem, destino))
 }
 
 func aguardarEnter() {
