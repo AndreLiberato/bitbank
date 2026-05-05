@@ -12,6 +12,7 @@ import (
 
 const (
 	opCadastrar = "cadastrar"
+	opSaldo     = "saldo"
 	opSair      = "sair"
 )
 
@@ -35,6 +36,7 @@ func selecionarOperacao() string {
 				Title("BitBank — escolha uma operação").
 				Options(
 					huh.NewOption("Cadastrar Conta", opCadastrar),
+					huh.NewOption("Consultar Saldo", opSaldo),
 					huh.NewOption("Sair", opSair),
 				).
 				Value(&op),
@@ -50,6 +52,8 @@ func executarOperacao(op string, svc *service.AccountService) {
 	switch op {
 	case opCadastrar:
 		cadastrarConta(svc)
+	case opSaldo:
+		consultarSaldo(svc)
 	}
 }
 
@@ -72,6 +76,28 @@ func cadastrarConta(svc *service.AccountService) {
 		return
 	}
 	printSucesso(fmt.Sprintf("Conta %s criada com saldo R$ 0,00.", numero))
+}
+
+func consultarSaldo(svc *service.AccountService) {
+	var numero string
+	form := huh.NewForm(
+		huh.NewGroup(
+			huh.NewInput().
+				Title("Consultar Saldo").
+				Description("Informe o número da conta").
+				Value(&numero).
+				Validate(naoVazio),
+		),
+	)
+	if err := form.Run(); err != nil {
+		return
+	}
+	saldo, err := svc.GetBalance(numero)
+	if err != nil {
+		printErro(err)
+		return
+	}
+	printSucesso(fmt.Sprintf("Saldo da conta %s: R$ %.2f", numero, saldo))
 }
 
 func aguardarEnter() {

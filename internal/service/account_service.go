@@ -15,6 +15,17 @@ func NewAccountService(repo repository.AccountRepository) *AccountService {
 	return &AccountService{repo: repo}
 }
 
+func (s *AccountService) GetBalance(number string) (float64, error) {
+	account, err := s.repo.FindByNumber(number)
+	if err != nil {
+		return 0, err
+	}
+	if account == nil {
+		return 0, fmt.Errorf("conta %s não encontrada", number)
+	}
+	return account.Balance, nil
+}
+
 func (s *AccountService) CreateAccount(number string) error {
 	exists, err := s.repo.Exists(number)
 	if err != nil {
