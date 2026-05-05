@@ -14,6 +14,7 @@ const (
 	opCadastrar = "cadastrar"
 	opSaldo     = "saldo"
 	opCredito   = "credito"
+	opDebito    = "debito"
 	opSair      = "sair"
 )
 
@@ -39,6 +40,7 @@ func selecionarOperacao() string {
 					huh.NewOption("Cadastrar Conta", opCadastrar),
 					huh.NewOption("Consultar Saldo", opSaldo),
 					huh.NewOption("Crédito", opCredito),
+					huh.NewOption("Débito", opDebito),
 					huh.NewOption("Sair", opSair),
 				).
 				Value(&op),
@@ -58,6 +60,8 @@ func executarOperacao(op string, svc *service.AccountService) {
 		consultarSaldo(svc)
 	case opCredito:
 		credito(svc)
+	case opDebito:
+		debito(svc)
 	}
 }
 
@@ -127,6 +131,31 @@ func credito(svc *service.AccountService) {
 		return
 	}
 	printSucesso(fmt.Sprintf("Crédito de R$ %.2f realizado na conta %s.", parseValor(valorStr), numero))
+}
+
+func debito(svc *service.AccountService) {
+	var numero, valorStr string
+	form := huh.NewForm(
+		huh.NewGroup(
+			huh.NewInput().
+				Title("Débito").
+				Description("Número da conta").
+				Value(&numero).
+				Validate(naoVazio),
+			huh.NewInput().
+				Description("Valor").
+				Value(&valorStr).
+				Validate(validarValor),
+		),
+	)
+	if err := form.Run(); err != nil {
+		return
+	}
+	if err := svc.Debit(numero, parseValor(valorStr)); err != nil {
+		printErro(err)
+		return
+	}
+	printSucesso(fmt.Sprintf("Débito de R$ %.2f realizado na conta %s.", parseValor(valorStr), numero))
 }
 
 func aguardarEnter() {
