@@ -6,14 +6,15 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/AndreLiberato/bitbank/internal/domain"
 	"github.com/AndreLiberato/bitbank/internal/service"
 	"github.com/charmbracelet/huh"
 )
 
 const (
-	opCadastrar = "cadastrar"
-	opSaldo     = "saldo"
-	opCredito   = "credito"
+	opCadastrar     = "cadastrar"
+	opSaldo         = "saldo"
+	opCredito       = "credito"
 	opDebito        = "debito"
 	opTransferencia = "transferencia"
 	opSair          = "sair"
@@ -70,7 +71,7 @@ func executarOperacao(op string, svc *service.AccountService) {
 }
 
 func cadastrarConta(svc *service.AccountService) {
-	var numero string
+	var numero, tipo string
 	form := huh.NewForm(
 		huh.NewGroup(
 			huh.NewInput().
@@ -78,9 +79,24 @@ func cadastrarConta(svc *service.AccountService) {
 				Description("Informe o número da nova conta").
 				Value(&numero).
 				Validate(naoVazio),
+			huh.NewSelect[string]().
+				Title("Tipo de conta").
+				Options(
+					huh.NewOption("Conta Simples", domain.AccountTypeSimple),
+					huh.NewOption("Conta Bônus", domain.AccountTypeBonus),
+				).
+				Value(&tipo),
 		),
 	)
 	if err := form.Run(); err != nil {
+		return
+	}
+	if tipo == domain.AccountTypeBonus {
+		if err := svc.CreateBonusAccount(numero); err != nil {
+			printErro(err)
+			return
+		}
+		printSucesso(fmt.Sprintf("Conta bônus %s criada com saldo R$ 0,00 e 10 pontos.", numero))
 		return
 	}
 	if err := svc.CreateAccount(numero); err != nil {
@@ -104,12 +120,16 @@ func consultarSaldo(svc *service.AccountService) {
 	if err := form.Run(); err != nil {
 		return
 	}
-	saldo, err := svc.GetBalance(numero)
+	account, err := svc.GetAccount(numero)
 	if err != nil {
 		printErro(err)
 		return
 	}
-	printSucesso(fmt.Sprintf("Saldo da conta %s: R$ %.2f", numero, saldo))
+	msg := fmt.Sprintf("Saldo da conta %s: R$ %.2f", numero, account.Balance)
+	if account.IsBonus() {
+		msg = fmt.Sprintf("%s | Pontos: %d", msg, account.Points)
+	}
+	printSucesso(msg)
 }
 
 func credito(svc *service.AccountService) {

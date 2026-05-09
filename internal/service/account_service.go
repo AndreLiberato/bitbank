@@ -38,6 +38,9 @@ func (s *AccountService) Transfer(from, to string, amount float64) error {
 	}
 	fromAccount.Balance -= amount
 	toAccount.Balance += amount
+	if toAccount.IsBonus() {
+		toAccount.Points += pointsForReceivedTransfer(amount)
+	}
 	if err := s.repo.Update(*fromAccount); err != nil {
 		return err
 	}
@@ -74,27 +77,64 @@ func (s *AccountService) Credit(number string, amount float64) error {
 		return fmt.Errorf("conta %s não encontrada", number)
 	}
 	account.Balance += amount
+	if account.IsBonus() {
+		account.Points += pointsForDeposit(amount)
+	}
 	return s.repo.Update(*account)
 }
 
 func (s *AccountService) GetBalance(number string) (float64, error) {
-	account, err := s.repo.FindByNumber(number)
+	account, err := s.GetAccount(number)
 	if err != nil {
 		return 0, err
-	}
-	if account == nil {
-		return 0, fmt.Errorf("conta %s não encontrada", number)
 	}
 	return account.Balance, nil
 }
 
+func (s *AccountService) GetAccount(number string) (*domain.Account, error) {
+	account, err := s.repo.FindByNumber(number)
+	if err != nil {
+		return nil, err
+	}
+	if account == nil {
+		return nil, fmt.Errorf("conta %s não encontrada", number)
+	}
+	return account, nil
+}
+
 func (s *AccountService) CreateAccount(number string) error {
-	exists, err := s.repo.Exists(number)
+	return s.createAccount(domain.Account{
+		Number:  number,
+		Balance: 0,
+		Type:    domain.AccountTypeSimple,
+		Points:  0,
+	})
+}
+
+func (s *AccountService) CreateBonusAccount(number string) error {
+	return s.createAccount(domain.Account{
+		Number:  number,
+		Balance: 0,
+		Type:    domain.AccountTypeBonus,
+		Points:  10,
+	})
+}
+
+func (s *AccountService) createAccount(account domain.Account) error {
+	exists, err := s.repo.Exists(account.Number)
 	if err != nil {
 		return err
 	}
 	if exists {
-		return fmt.Errorf("conta %s já existe", number)
+		return fmt.Errorf("conta %s já existe", account.Number)
 	}
-	return s.repo.Save(domain.Account{Number: number, Balance: 0})
+	return s.repo.Save(account)
+}
+
+func pointsForDeposit(amount float64) int {
+	return int(amount / 100)
+}
+
+func pointsForReceivedTransfer(amount float64) int {
+	return int(amount / 200)
 }
