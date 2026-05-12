@@ -129,6 +129,35 @@ func (s *AccountService) CreateBonusAccount(number string) error {
 	})
 }
 
+func (s *AccountService) CreateSavingsAccount(number string) error {
+	return s.createAccount(domain.Account{
+		Number:  number,
+		Balance: 0,
+		Type:    domain.AccountTypeSavings,
+		Points:  0,
+	})
+}
+
+func (s *AccountService) RenderJuros(taxa float64) error {
+	if taxa <= 0 {
+		return fmt.Errorf("taxa deve ser maior que zero")
+	}
+	accounts, err := s.repo.FindAll()
+	if err != nil {
+		return err
+	}
+	for _, account := range accounts {
+		if !account.IsSavings() {
+			continue
+		}
+		account.Balance += account.Balance * (taxa / 100)
+		if err := s.repo.Update(account); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func (s *AccountService) createAccount(account domain.Account) error {
 	exists, err := s.repo.Exists(account.Number)
 	if err != nil {

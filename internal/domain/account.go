@@ -1,8 +1,9 @@
 package domain
 
 const (
-	AccountTypeSimple = "simples"
-	AccountTypeBonus  = "bonus"
+	AccountTypeSimple  = "simples"
+	AccountTypeBonus   = "bonus"
+	AccountTypeSavings = "poupanca"
 )
 
 type Account struct {
@@ -14,4 +15,8 @@ type Account struct {
 
 func (a Account) IsBonus() bool {
 	return a.Type == AccountTypeBonus
+}
+
+func (a Account) IsSavings() bool {
+	return a.Type == AccountTypeSavings
 }
