@@ -17,6 +17,7 @@ const (
 	opCredito       = "credito"
 	opDebito        = "debito"
 	opTransferencia = "transferencia"
+	opRenderJuros   = "renderjuros"
 	opSair          = "sair"
 )
 
@@ -44,6 +45,7 @@ func selecionarOperacao() string {
 					huh.NewOption("Crédito", opCredito),
 					huh.NewOption("Débito", opDebito),
 					huh.NewOption("Transferência", opTransferencia),
+					huh.NewOption("Render Juros", opRenderJuros),
 					huh.NewOption("Sair", opSair),
 				).
 				Value(&op),
@@ -67,6 +69,8 @@ func executarOperacao(op string, svc *service.AccountService) {
 		debito(svc)
 	case opTransferencia:
 		transferencia(svc)
+	case opRenderJuros:
+		renderJuros(svc)
 	}
 }
 
@@ -84,6 +88,7 @@ func cadastrarConta(svc *service.AccountService) {
 				Options(
 					huh.NewOption("Conta Simples", domain.AccountTypeSimple),
 					huh.NewOption("Conta Bônus", domain.AccountTypeBonus),
+					huh.NewOption("Conta Poupança", domain.AccountTypeSavings),
 				).
 				Value(&tipo),
 		),
@@ -97,6 +102,14 @@ func cadastrarConta(svc *service.AccountService) {
 			return
 		}
 		printSucesso(fmt.Sprintf("Conta bônus %s criada com saldo R$ 0,00 e 10 pontos.", numero))
+		return
+	}
+	if tipo == domain.AccountTypeSavings {
+		if err := svc.CreateSavingsAccount(numero); err != nil {
+			printErro(err)
+			return
+		}
+		printSucesso(fmt.Sprintf("Conta poupança %s criada com saldo R$ 0,00.", numero))
 		return
 	}
 	if err := svc.CreateAccount(numero); err != nil {
@@ -210,6 +223,28 @@ func transferencia(svc *service.AccountService) {
 		return
 	}
 	printSucesso(fmt.Sprintf("Transferência de R$ %.2f da conta %s para %s realizada.", valor, origem, destino))
+}
+
+func renderJuros(svc *service.AccountService) {
+	var taxaStr string
+	form := huh.NewForm(
+		huh.NewGroup(
+			huh.NewInput().
+				Title("Render Juros").
+				Description("Informe a taxa de juros (%)").
+				Value(&taxaStr).
+				Validate(validarValor),
+		),
+	)
+	if err := form.Run(); err != nil {
+		return
+	}
+	taxa := parseValor(taxaStr)
+	if err := svc.RenderJuros(taxa); err != nil {
+		printErro(err)
+		return
+	}
+	printSucesso(fmt.Sprintf("Juros de %.2f%% aplicados em todas as contas poupança.", taxa))
 }
 
 func aguardarEnter() {
