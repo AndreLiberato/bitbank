@@ -16,7 +16,10 @@ func NewAccountService(repo repository.AccountRepository) *AccountService {
 }
 
 func (s *AccountService) Transfer(from, to string, amount float64) error {
-	if amount <= 0 {
+	if amount < 0 {
+		return fmt.Errorf("valor não pode ser negativo")
+	}
+	if amount == 0 {
 		return fmt.Errorf("valor deve ser maior que zero")
 	}
 	fromAccount, err := s.repo.FindByNumber(from)
@@ -48,7 +51,10 @@ func (s *AccountService) Transfer(from, to string, amount float64) error {
 }
 
 func (s *AccountService) Debit(number string, amount float64) error {
-	if amount <= 0 {
+	if amount < 0 {
+		return fmt.Errorf("valor não pode ser negativo")
+	}
+	if amount == 0 {
 		return fmt.Errorf("valor deve ser maior que zero")
 	}
 	account, err := s.repo.FindByNumber(number)
@@ -66,7 +72,10 @@ func (s *AccountService) Debit(number string, amount float64) error {
 }
 
 func (s *AccountService) Credit(number string, amount float64) error {
-	if amount <= 0 {
+	if amount < 0 {
+		return fmt.Errorf("valor não pode ser negativo")
+	}
+	if amount == 0 {
 		return fmt.Errorf("valor deve ser maior que zero")
 	}
 	account, err := s.repo.FindByNumber(number)
