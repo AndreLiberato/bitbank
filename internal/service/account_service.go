@@ -111,10 +111,13 @@ func (s *AccountService) GetAccount(number string) (*domain.Account, error) {
 	return account, nil
 }
 
-func (s *AccountService) CreateAccount(number string) error {
+func (s *AccountService) CreateAccount(number string, initialBalance float64) error {
+	if initialBalance < 0 {
+		return fmt.Errorf("saldo inicial não pode ser negativo")
+	}
 	return s.createAccount(domain.Account{
 		Number:  number,
-		Balance: 0,
+		Balance: initialBalance,
 		Type:    domain.AccountTypeSimple,
 		Points:  0,
 	})
