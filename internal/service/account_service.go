@@ -7,6 +7,8 @@ import (
 	"github.com/AndreLiberato/bitbank/internal/repository"
 )
 
+const negativeBalanceLimit = -1000.0
+
 type AccountService struct {
 	repo repository.AccountRepository
 }
@@ -36,10 +38,11 @@ func (s *AccountService) Transfer(from, to string, amount float64) error {
 	if toAccount == nil {
 		return fmt.Errorf("conta destino %s não encontrada", to)
 	}
-	if fromAccount.Balance < amount {
+	newFromBalance := fromAccount.Balance - amount
+	if !allowsBalance(*fromAccount, newFromBalance) {
 		return fmt.Errorf("saldo insuficiente na conta origem %s", from)
 	}
-	fromAccount.Balance -= amount
+	fromAccount.Balance = newFromBalance
 	toAccount.Balance += amount
 	if toAccount.IsBonus() {
 		toAccount.Points += pointsForReceivedTransfer(amount)
@@ -64,10 +67,11 @@ func (s *AccountService) Debit(number string, amount float64) error {
 	if account == nil {
 		return fmt.Errorf("conta %s não encontrada", number)
 	}
-	if account.Balance < amount {
+	newBalance := account.Balance - amount
+	if !allowsBalance(*account, newBalance) {
 		return fmt.Errorf("saldo insuficiente na conta %s", number)
 	}
-	account.Balance -= amount
+	account.Balance = newBalance
 	return s.repo.Update(*account)
 }
 
@@ -178,4 +182,11 @@ func pointsForDeposit(amount float64) int {
 
 func pointsForReceivedTransfer(amount float64) int {
 	return int(amount / 200)
+}
+
+func allowsBalance(account domain.Account, balance float64) bool {
+	if account.Type == domain.AccountTypeSimple || account.IsBonus() {
+		return balance >= negativeBalanceLimit
+	}
+	return balance >= 0
 }
