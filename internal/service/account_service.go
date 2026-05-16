@@ -129,10 +129,13 @@ func (s *AccountService) CreateBonusAccount(number string) error {
 	})
 }
 
-func (s *AccountService) CreateSavingsAccount(number string) error {
+func (s *AccountService) CreateSavingsAccount(number string, initialBalance float64) error {
+	if initialBalance < 0 {
+		return fmt.Errorf("saldo inicial não pode ser negativo")
+	}
 	return s.createAccount(domain.Account{
 		Number:  number,
-		Balance: 0,
+		Balance: initialBalance,
 		Type:    domain.AccountTypeSavings,
 		Points:  0,
 	})
