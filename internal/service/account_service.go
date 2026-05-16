@@ -177,5 +177,5 @@ func pointsForDeposit(amount float64) int {
 }
 
 func pointsForReceivedTransfer(amount float64) int {
-	return int(amount / 200)
+	return int(amount / 150)
 }
