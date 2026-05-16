@@ -105,11 +105,15 @@ func cadastrarConta(svc *service.AccountService) {
 		return
 	}
 	if tipo == domain.AccountTypeSavings {
-		if err := svc.CreateSavingsAccount(numero); err != nil {
+		saldoInicial := solicitarSaldoInicialPoupanca()
+		if saldoInicial == nil {
+			return
+		}
+		if err := svc.CreateSavingsAccount(numero, *saldoInicial); err != nil {
 			printErro(err)
 			return
 		}
-		printSucesso(fmt.Sprintf("Conta poupança %s criada com saldo R$ 0,00.", numero))
+		printSucesso(fmt.Sprintf("Conta poupança %s criada com saldo R$ %.2f.", numero, *saldoInicial))
 		return
 	}
 	if err := svc.CreateAccount(numero); err != nil {
@@ -117,6 +121,24 @@ func cadastrarConta(svc *service.AccountService) {
 		return
 	}
 	printSucesso(fmt.Sprintf("Conta %s criada com saldo R$ 0,00.", numero))
+}
+
+func solicitarSaldoInicialPoupanca() *float64 {
+	var valorStr string
+	form := huh.NewForm(
+		huh.NewGroup(
+			huh.NewInput().
+				Title("Saldo inicial da Conta Poupança").
+				Description("Informe o saldo inicial").
+				Value(&valorStr).
+				Validate(validarSaldoInicial),
+		),
+	)
+	if err := form.Run(); err != nil {
+		return nil
+	}
+	valor := parseValor(valorStr)
+	return &valor
 }
 
 func consultarSaldo(svc *service.AccountService) {
@@ -274,6 +296,17 @@ func validarValor(s string) error {
 	}
 	if v <= 0 {
 		return fmt.Errorf("valor deve ser maior que zero")
+	}
+	return nil
+}
+
+func validarSaldoInicial(s string) error {
+	v, err := strconv.ParseFloat(strings.ReplaceAll(s, ",", "."), 64)
+	if err != nil {
+		return fmt.Errorf("valor inválido")
+	}
+	if v < 0 {
+		return fmt.Errorf("valor não pode ser negativo")
 	}
 	return nil
 }
