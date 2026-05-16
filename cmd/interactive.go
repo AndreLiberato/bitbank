@@ -105,7 +105,7 @@ func cadastrarConta(svc *service.AccountService) {
 		return
 	}
 	if tipo == domain.AccountTypeSavings {
-		saldoInicial := solicitarSaldoInicialPoupanca()
+		saldoInicial := solicitarSaldoInicial("Saldo inicial da Conta Poupança")
 		if saldoInicial == nil {
 			return
 		}
@@ -116,19 +116,23 @@ func cadastrarConta(svc *service.AccountService) {
 		printSucesso(fmt.Sprintf("Conta poupança %s criada com saldo R$ %.2f.", numero, *saldoInicial))
 		return
 	}
-	if err := svc.CreateAccount(numero); err != nil {
+	saldoInicial := solicitarSaldoInicial("Saldo inicial da Conta Simples")
+	if saldoInicial == nil {
+		return
+	}
+	if err := svc.CreateAccount(numero, *saldoInicial); err != nil {
 		printErro(err)
 		return
 	}
-	printSucesso(fmt.Sprintf("Conta %s criada com saldo R$ 0,00.", numero))
+	printSucesso(fmt.Sprintf("Conta %s criada com saldo R$ %.2f.", numero, *saldoInicial))
 }
 
-func solicitarSaldoInicialPoupanca() *float64 {
+func solicitarSaldoInicial(titulo string) *float64 {
 	var valorStr string
 	form := huh.NewForm(
 		huh.NewGroup(
 			huh.NewInput().
-				Title("Saldo inicial da Conta Poupança").
+				Title(titulo).
 				Description("Informe o saldo inicial").
 				Value(&valorStr).
 				Validate(validarSaldoInicial),
