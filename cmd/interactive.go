@@ -13,6 +13,7 @@ import (
 
 const (
 	opCadastrar     = "cadastrar"
+	opConsultar     = "consultar"
 	opSaldo         = "saldo"
 	opCredito       = "credito"
 	opDebito        = "debito"
@@ -41,6 +42,7 @@ func selecionarOperacao() string {
 				Title("BitBank — escolha uma operação").
 				Options(
 					huh.NewOption("Cadastrar Conta", opCadastrar),
+					huh.NewOption("Consultar Conta", opConsultar),
 					huh.NewOption("Consultar Saldo", opSaldo),
 					huh.NewOption("Crédito", opCredito),
 					huh.NewOption("Débito", opDebito),
@@ -61,6 +63,8 @@ func executarOperacao(op string, svc *service.AccountService) {
 	switch op {
 	case opCadastrar:
 		cadastrarConta(svc)
+	case opConsultar:
+		consultarConta(svc)
 	case opSaldo:
 		consultarSaldo(svc)
 	case opCredito:
@@ -143,6 +147,45 @@ func solicitarSaldoInicial(titulo string) *float64 {
 	}
 	valor := parseValor(valorStr)
 	return &valor
+}
+
+func consultarConta(svc *service.AccountService) {
+	var numero string
+	form := huh.NewForm(
+		huh.NewGroup(
+			huh.NewInput().
+				Title("Consultar Conta").
+				Description("Informe o número da conta").
+				Value(&numero).
+				Validate(naoVazio),
+		),
+	)
+	if err := form.Run(); err != nil {
+		return
+	}
+	account, err := svc.GetAccount(numero)
+	if err != nil {
+		printErro(err)
+		return
+	}
+	fmt.Printf("\n--- Dados da Conta ---\n")
+	fmt.Printf("Tipo:   %s\n", nomeTipo(account.Type))
+	fmt.Printf("Número: %s\n", account.Number)
+	fmt.Printf("Saldo:  R$ %.2f\n", account.Balance)
+	if account.IsBonus() {
+		fmt.Printf("Bônus:  %d pontos\n", account.Points)
+	}
+}
+
+func nomeTipo(tipo string) string {
+	switch tipo {
+	case domain.AccountTypeBonus:
+		return "Conta Bônus"
+	case domain.AccountTypeSavings:
+		return "Conta Poupança"
+	default:
+		return "Conta Simples"
+	}
 }
 
 func consultarSaldo(svc *service.AccountService) {
