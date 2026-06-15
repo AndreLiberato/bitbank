@@ -1,0 +1,488 @@
+{
+	"info": {
+		"name": "BitBank API - End-to-End",
+		"description": "Coleção para testes ponta a ponta da API REST do BitBank. Testa as contas do tipo simples, poupança e bônus.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "1. Criar Conta Simples",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"number\": \"{{acc_simples}}\",\n  \"type\": \"simples\",\n  \"balance\": 1000.0\n}"
+				},
+				"url": {
+					"raw": "{{baseUrl}}/banco/conta/",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"banco",
+						"conta",
+						""
+					]
+				}
+			},
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status 201 Created\", function () {",
+							"    pm.response.to.have.status(201);",
+							"});",
+							"pm.test(\"Verifica saldo inicial\", function () {",
+							"    var jsonData = pm.response.json();",
+							"    pm.expect(jsonData.balance).to.eql(1000);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			]
+		},
+		{
+			"name": "2. Criar Conta Poupança",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"number\": \"{{acc_poupanca}}\",\n  \"type\": \"poupanca\",\n  \"balance\": 500.0\n}"
+				},
+				"url": {
+					"raw": "{{baseUrl}}/banco/conta/",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"banco",
+						"conta",
+						""
+					]
+				}
+			},
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status 201 Created\", function () {",
+							"    pm.response.to.have.status(201);",
+							"});",
+							"pm.test(\"Verifica saldo inicial\", function () {",
+							"    var jsonData = pm.response.json();",
+							"    pm.expect(jsonData.balance).to.eql(500);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			]
+		},
+		{
+			"name": "3. Criar Conta Bônus",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"number\": \"{{acc_bonus}}\",\n  \"type\": \"bonus\",\n  \"balance\": 0.0\n}"
+				},
+				"url": {
+					"raw": "{{baseUrl}}/banco/conta/",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"banco",
+						"conta",
+						""
+					]
+				}
+			},
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status 201 Created\", function () {",
+							"    pm.response.to.have.status(201);",
+							"});",
+							"pm.test(\"Inicia com 10 pontos de bônus\", function () {",
+							"    var jsonData = pm.response.json();",
+							"    pm.expect(jsonData.bonus).to.eql(10);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			]
+		},
+		{
+			"name": "4. Creditar Conta Bônus",
+			"request": {
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"amount\": 200.0\n}"
+				},
+				"url": {
+					"raw": "{{baseUrl}}/banco/conta/{{acc_bonus}}/credito",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"banco",
+						"conta",
+						"{{acc_bonus}}",
+						"credito"
+					]
+				}
+			},
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status 200 OK\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"pm.test(\"Ganha 2 pontos (200 / 100), total de 12 pontos\", function () {",
+							"    var jsonData = pm.response.json();",
+							"    pm.expect(jsonData.bonus).to.eql(12);",
+							"    pm.expect(jsonData.balance).to.eql(200);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			]
+		},
+		{
+			"name": "5. Debitar Conta Simples",
+			"request": {
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"amount\": 100.0\n}"
+				},
+				"url": {
+					"raw": "{{baseUrl}}/banco/conta/{{acc_simples}}/debito",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"banco",
+						"conta",
+						"{{acc_simples}}",
+						"debito"
+					]
+				}
+			},
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status 200 OK\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"pm.test(\"Saldo após débito deve ser 900\", function () {",
+							"    var jsonData = pm.response.json();",
+							"    pm.expect(jsonData.balance).to.eql(900);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			]
+		},
+		{
+			"name": "6. Transferência Simples -> Poupança",
+			"request": {
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"from\": \"{{acc_simples}}\",\n  \"to\": \"{{acc_poupanca}}\",\n  \"amount\": 200.0\n}"
+				},
+				"url": {
+					"raw": "{{baseUrl}}/banco/conta/transferencia",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"banco",
+						"conta",
+						"transferencia"
+					]
+				}
+			},
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status 200 OK\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			]
+		},
+		{
+			"name": "7. Transferência Poupança -> Bônus",
+			"request": {
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"from\": \"{{acc_poupanca}}\",\n  \"to\": \"{{acc_bonus}}\",\n  \"amount\": 400.0\n}"
+				},
+				"url": {
+					"raw": "{{baseUrl}}/banco/conta/transferencia",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"banco",
+						"conta",
+						"transferencia"
+					]
+				}
+			},
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status 200 OK\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			]
+		},
+		{
+			"name": "8. Render Juros",
+			"request": {
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"rate\": 10.0\n}"
+				},
+				"url": {
+					"raw": "{{baseUrl}}/banco/conta/rendimento",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"banco",
+						"conta",
+						"rendimento"
+					]
+				}
+			},
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status 200 OK\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			]
+		},
+		{
+			"name": "9. Obter Conta Simples",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/banco/conta/{{acc_simples}}",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"banco",
+						"conta",
+						"{{acc_simples}}"
+					]
+				}
+			},
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status 200 OK\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"// 1000 - 100 (débito) - 200 (transferência)",
+							"pm.test(\"Saldo final da Simples deve ser 700\", function () {",
+							"    var jsonData = pm.response.json();",
+							"    pm.expect(jsonData.balance).to.eql(700);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			]
+		},
+		{
+			"name": "10. Obter Conta Poupança",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/banco/conta/{{acc_poupanca}}",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"banco",
+						"conta",
+						"{{acc_poupanca}}"
+					]
+				}
+			},
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status 200 OK\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"// 500 + 200 (transferência recebida) - 400 (transferência enviada) = 300",
+							"// 300 + 10% (juros) = 330",
+							"pm.test(\"Saldo final da Poupança deve ser 330\", function () {",
+							"    var jsonData = pm.response.json();",
+							"    pm.expect(jsonData.balance).to.eql(330);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			]
+		},
+		{
+			"name": "11. Obter Conta Bônus",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/banco/conta/{{acc_bonus}}",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"banco",
+						"conta",
+						"{{acc_bonus}}"
+					]
+				}
+			},
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status 200 OK\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"// 0 + 200 (crédito) + 400 (transferência recebida) = 600",
+							"pm.test(\"Saldo final da Bônus deve ser 600\", function () {",
+							"    var jsonData = pm.response.json();",
+							"    pm.expect(jsonData.balance).to.eql(600);",
+							"});",
+							"// 12 pontos anteriores + (400 / 200) = 14",
+							"pm.test(\"Bônus deve ser 14\", function () {",
+							"    var jsonData = pm.response.json();",
+							"    pm.expect(jsonData.bonus).to.eql(14);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			]
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:8080",
+			"type": "string"
+		},
+		{
+			"key": "acc_simples",
+			"value": "1001",
+			"type": "string"
+		},
+		{
+			"key": "acc_poupanca",
+			"value": "1002",
+			"type": "string"
+		},
+		{
+			"key": "acc_bonus",
+			"value": "1003",
+			"type": "string"
+		}
+	]
+}
