@@ -27,3 +27,4 @@ A pipeline executa automaticamente as seguintes etapas:
 
 Além da pipeline principal, o projeto possui uma pipeline de estabilização para branches `stabilization/rc-*`.
 Ao aceitar pull requests de `main` ou `bugfix*` nessas branches, a automação executa dependências, build, análise estática com `go vet`, testes unitários, cria a tag `rc-*` correspondente e disponibiliza um pacote `.zip` da versão na área de artifacts do workflow.
+Esse fluxo ajuda a validar automaticamente as mudanças antes da homologação e da liberação das versões.
