@@ -1,0 +1,142 @@
+name: Stabilization
+
+on:
+  pull_request:
+    branches:
+      - 'stabilization/**'
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - closed
+
+permissions: read-all
+
+jobs:
+  validate-stabilization-pr:
+    name: Validate Stabilization PR
+    if: github.event.action != 'closed'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Validate source branch
+        run: |
+          case "${{ github.event.pull_request.head.ref }}" in
+            main|bugfix*)
+              ;;
+            *)
+              echo "A branch de origem deve ser main ou bugfix* para PRs de estabilizacao."
+              exit 1
+              ;;
+          esac
+
+      - name: Validate release candidate naming
+        run: |
+          chmod +x scripts/next_rc_tag.sh
+          scripts/next_rc_tag.sh "${{ github.event.pull_request.head.ref }}" "${{ github.event.pull_request.base.ref }}" >/dev/null
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Resolve dependencies
+        run: go mod download
+
+      - name: Build project
+        run: go build ./...
+
+      - name: Run quality checks
+        run: go vet ./...
+
+      - name: Run unit tests
+        run: go test ./...
+
+  promote-release-candidate:
+    name: Promote Release Candidate
+    if: github.event.action == 'closed' && github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout merged code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.merge_commit_sha }}
+
+      - name: Validate source branch
+        run: |
+          case "${{ github.event.pull_request.head.ref }}" in
+            main|bugfix*)
+              ;;
+            *)
+              echo "A branch de origem deve ser main ou bugfix* para PRs de estabilizacao."
+              exit 1
+              ;;
+          esac
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Resolve dependencies
+        run: go mod download
+
+      - name: Build project
+        run: go build ./...
+
+      - name: Run quality checks
+        run: go vet ./...
+
+      - name: Run unit tests
+        run: go test ./...
+
+      - name: Determine RC tag
+        id: rc_tag
+        run: |
+          chmod +x scripts/next_rc_tag.sh
+          tag_name="$(scripts/next_rc_tag.sh "${{ github.event.pull_request.head.ref }}" "${{ github.event.pull_request.base.ref }}" "${{ github.event.pull_request.merge_commit_sha }}")"
+          echo "tag_name=$tag_name" >> "$GITHUB_OUTPUT"
+          echo "Nova tag RC: $tag_name"
+
+      - name: Build release package
+        env:
+          TAG_NAME: ${{ steps.rc_tag.outputs.tag_name }}
+        run: |
+          rm -rf release
+          mkdir -p "release/$TAG_NAME"
+          go build -o "release/$TAG_NAME/bitbank" .
+          cp README.md "release/$TAG_NAME/"
+          cp BitBank_E2E_Tests.postman_collection.json "release/$TAG_NAME/"
+          (
+            cd release
+            zip -r "../$TAG_NAME.zip" "$TAG_NAME"
+          )
+
+      - name: Create and push RC tag
+        env:
+          TAG_NAME: ${{ steps.rc_tag.outputs.tag_name }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git rev-parse "$TAG_NAME" >/dev/null 2>&1; then
+            echo "A tag $TAG_NAME ja existe, mantendo a referencia atual."
+          else
+            git tag "$TAG_NAME" "${{ github.event.pull_request.merge_commit_sha }}"
+            git push origin "$TAG_NAME"
+          fi
+
+      - name: Upload release artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.rc_tag.outputs.tag_name }}.zip
+          path: ${{ steps.rc_tag.outputs.tag_name }}.zip
