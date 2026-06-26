@@ -211,3 +211,10 @@ func allowsBalance(account domain.Account, balance float64) bool {
 	}
 	return balance >= 0
 }
+
+func allowsBalance(account domain.Account, balance float64) bool {
+	if account.Type == domain.AccountTypeSimple || account.IsBonus() {
+		return balance >= negativeBalanceLimit
+	}
+	return balance >= 0
+}
