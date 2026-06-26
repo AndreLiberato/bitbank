@@ -202,7 +202,21 @@ func pointsForDeposit(amount float64) int {
 }
 
 func pointsForReceivedTransfer(amount float64) int {
-	return int(amount / 200)
+	return int(amount / 150)
+}
+
+func allowsBalance(account domain.Account, balance float64) bool {
+	if account.Type == domain.AccountTypeSimple || account.IsBonus() {
+		return balance >= negativeBalanceLimit
+	}
+	return balance >= 0
+}
+
+func allowsBalance(account domain.Account, balance float64) bool {
+	if account.Type == domain.AccountTypeSimple || account.IsBonus() {
+		return balance >= negativeBalanceLimit
+	}
+	return balance >= 0
 }
 
 func allowsBalance(account domain.Account, balance float64) bool {
