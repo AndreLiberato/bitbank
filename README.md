@@ -111,3 +111,21 @@ Este projeto utiliza GitHub Actions para automatizar a integração e entrega co
 1. **Pipeline de Integração Contínua (CI):** Executa em pushes e PRs para a branch `main`. Constrói o projeto, roda testes e gera uma tag `build-XXX`.
 2. **Pipeline de Estabilização (Homologação):** Executa em PRs para as branches `stabilization/rc-*`. Executa testes, análise estática (`go vet`), cria tags `rc-*` correspondentes e gera o pacote `.zip` da release.
 3. **Pipeline de Produção:** Executa em PRs para a branch `production`. Executa todos os testes e análises estáticas, gera a tag de release de produção (`rel-*`), publica o pacote `.zip` nos artefatos do workflow, constrói e publica a imagem Docker no Docker Hub.
+
+## Git Hooks e Validação de Commits
+
+O projeto possui validação local de mensagens de commit por meio de Git Hooks e a mesma checagem também é executada remotamente em pull requests.
+
+Formato obrigatório da mensagem de commit:
+
+> `#NUM_ISSUE - MENSAGEM`
+
+Exemplo:
+
+> `#33 - Corrige mensagem da tela principal`
+
+Para instalar os hooks locais após clonar o repositório, execute:
+
+```bash
+bash hooks/install.sh
+```

@@ -1,0 +1,29 @@
+name: Commit Validation
+
+on:
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+
+permissions: read-all
+
+jobs:
+  validate-commit-messages:
+    name: Validate Commit Messages
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Configure executable scripts
+        run: |
+          chmod +x hooks/commit-msg hooks/install.sh scripts/validate_commit_message.sh scripts/validate_pr_commits.sh
+
+      - name: Validate pull request commits
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: scripts/validate_pr_commits.sh "${{ github.event.pull_request.number }}"
