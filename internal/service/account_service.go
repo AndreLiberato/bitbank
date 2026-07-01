@@ -140,7 +140,7 @@ func (s *AccountService) Transfer(from, to string, amount float64) error {
 	if err != nil {
 		return err
 	}
-	newFromBalance := fromAccount.Balance - amount
+	newFromBalance := fromAccount.Balance
 	if !allowsBalance(*fromAccount, newFromBalance) {
 		return fmt.Errorf("%w na conta origem %s", ErrInsufficientBalance, from)
 	}
