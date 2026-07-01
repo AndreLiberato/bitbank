@@ -120,7 +120,7 @@ func (s *AccountService) Debit(number string, amount float64) error {
 	}
 	newBalance := account.Balance - amount
 	if !allowsBalance(*account, newBalance) {
-		return fmt.Errorf("%w na conta %s", ErrInsufficientBalance, number)
+		return fmt.Errorf("%w na conta  %s", ErrInsufficientBalance, number)
 	}
 	account.Balance = newBalance
 	return s.repo.Update(*account)
